@@ -25,39 +25,46 @@ import static org.spongepowered.asm.mixin.injection.At.Shift.AFTER;
 @Mixin(GameRenderer.class)
 public abstract class GameRendererMixin {
 
-    @Shadow private ShaderEffect shader;
+    @Shadow
+    private ShaderEffect shader;
 
-    @Shadow protected abstract void loadShader(Identifier location);
+    @Shadow
+    protected abstract void loadShader(Identifier location);
 
-    @Shadow @Final private Camera camera;
+    @Shadow
+    @Final
+    private Camera camera;
 
     /**
      * Fires {@link ShaderEffectRenderCallback#EVENT}
      */
-    @Inject(
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/WorldRenderer;drawEntityOutlinesFramebuffer()V", shift = AFTER),
-            method = "render"
-    )
-    private void hookShaderRender(float tickDelta, long nanoTime, boolean renderLevel, CallbackInfo info) {
+    @Inject(at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/client/render/WorldRenderer;drawEntityOutlinesFramebuffer()V",
+            shift = AFTER), method = "render")
+    private void hookShaderRender(float tickDelta, long nanoTime, boolean renderLevel,
+            CallbackInfo info) {
         ShaderEffectRenderCallback.EVENT.invoker().renderShaderEffects(tickDelta);
     }
 
     @Inject(method = "renderWorld", at = @At(value = "CONSTANT", args = "stringValue=hand"))
-    private void hookPostWorldRender(float tickDelta, long nanoTime, MatrixStack matrixStack, CallbackInfo ci) {
-        ((ReadableDepthFramebuffer)MinecraftClient.getInstance().getFramebuffer()).freezeDepthMap();
-        PostWorldRenderCallback.EVENT.invoker().onWorldRendered(this.camera, tickDelta, nanoTime);
+    private void hookPostWorldRender(float tickDelta, long nanoTime, MatrixStack matrixStack,
+            CallbackInfo ci) {
+        ((ReadableDepthFramebuffer) MinecraftClient.getInstance().getFramebuffer())
+                .freezeDepthMap();
+        PostWorldRenderCallback.EVENT.invoker().onWorldRendered(this.camera, tickDelta, nanoTime,
+                matrixStack);
     }
 
     /**
-     * Fires {@link PickEntityShaderCallback#EVENT}
-     * Disabled by optifine
+     * Fires {@link PickEntityShaderCallback#EVENT} Disabled by optifine
      */
     @Inject(method = "onCameraEntitySet", at = @At(value = "RETURN"), require = 0)
     private void useCustomEntityShader(@Nullable Entity entity, CallbackInfo info) {
         if (this.shader == null) {
             // Mixin does not like method references to shadowed methods
-            //noinspection Convert2MethodRef
-            PickEntityShaderCallback.EVENT.invoker().pickEntityShader(entity, loc -> this.loadShader(loc), () -> this.shader);
+            // noinspection Convert2MethodRef
+            PickEntityShaderCallback.EVENT.invoker().pickEntityShader(entity,
+                    loc -> this.loadShader(loc), () -> this.shader);
         }
     }
 }
