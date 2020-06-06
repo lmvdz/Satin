@@ -63,13 +63,13 @@ public abstract class DepthGlFramebufferMixin implements ReadableDepthFramebuffe
 
     @Inject(
             method = "initFbo",
-            at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/platform/GlStateManager;framebufferRenderbuffer(IIII)V", shift = AFTER)
+            at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/platform/GlStateManager;framebufferTexture2D(IIIII)V", shift = AFTER, ordinal = 1)
     )
     private void initFbo(int width, int height, boolean flushErrors, CallbackInfo ci) {
         if (this.useDepthAttachment)
             if (SatinFeatures.getInstance().readableDepthFramebuffers.isActive()) {
                 // Delete the depth render buffer, it will not be used
-                GlStateManager.deleteRenderbuffers(this.depthAttachment);
+                GlStateManager.deleteFramebuffers(this.depthAttachment);
                 this.depthAttachment = -1;
                 this.satin$depthTexture = satin$setupDepthTexture();
 
